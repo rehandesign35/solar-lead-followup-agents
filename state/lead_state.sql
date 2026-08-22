@@ -1,13 +1,9 @@
 -- Extends the Supabase project from Project 1 — same project, new table.
 -- Run in the Supabase SQL editor, or via `supabase migration new lead_state`.
 --
--- NOTE: `lead_id references leads(id)` assumes Project 1's calls table is
--- literally named `leads` with a uuid `id` column. Check Project 1's schema
--- before running this — rename the reference if it differs.
-
 create table if not exists lead_state (
   id uuid primary key default gen_random_uuid(),
-  lead_id uuid not null references leads(id),
+  lead_id uuid not null references calls(id),
   qualification_status text not null default 'unqualified'
     check (qualification_status in ('unqualified','partially_qualified','qualified','dead')),
   conversation_history jsonb not null default '[]'::jsonb,
