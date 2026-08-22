@@ -37,7 +37,7 @@ that wasn't ready the first time gets lost.*
 ## Status
 
 - [x] **Step 1 — Shared lead-state schema** (`state/schema.ts`, `state/lead_state.sql`)
-- [ ] Step 2 — Supervisor routing logic, tested in isolation
+- [x] **Step 2 — Supervisor routing logic** (`agents/supervisor.ts`, tested in isolation — `npm test`)
 - [ ] Step 3 — Sub-agent prompts/logic, each tested alone
 - [ ] Step 4 — Wire together via LangGraph
 - [ ] Step 5 — Trace visualization
