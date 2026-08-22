@@ -38,7 +38,7 @@ that wasn't ready the first time gets lost.*
 
 - [x] **Step 1 — Shared lead-state schema** (`state/schema.ts`, `state/lead_state.sql`)
 - [x] **Step 2 — Supervisor routing logic** (`agents/supervisor.ts`, tested in isolation — `npm test`)
-- [ ] Step 3 — Sub-agent prompts/logic, each tested alone
+- [x] **Step 3 — Sub-agents** (`agents/qualifier.ts`, `objectionHandler.ts`, `scheduler.ts`, each tested alone — 14/14 tests passing)
 - [ ] Step 4 — Wire together via LangGraph
 - [ ] Step 5 — Trace visualization
 - [ ] Step 6 — Demo chat widget frontend
