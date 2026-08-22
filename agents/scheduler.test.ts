@@ -15,6 +15,9 @@ function baseState(overrides: Partial<LeadStateType> = {}): LeadStateType {
     lastContactAt: new Date().toISOString(),
     nextFollowUpAt: null,
     turnsCount: 6,
+    pendingMessage: null,
+    daysSinceContact: null,
+    nextAgentHint: null,
     ...overrides,
   };
 }

@@ -96,6 +96,23 @@ export const LeadState = Annotation.Root({
     reducer: (_prev, next) => next,
     default: () => 0,
   }),
+
+  // --- Transient, per-invocation only. NOT persisted to Supabase — these
+  // exist to carry the incoming event into the graph and let the
+  // Supervisor's decision flow to the conditional edge. Reset to null
+  // before/after each invoke(), never written to the lead_state table. ---
+  pendingMessage: Annotation<string | null>({
+    reducer: (_prev, next) => next,
+    default: () => null,
+  }),
+  daysSinceContact: Annotation<number | null>({
+    reducer: (_prev, next) => next,
+    default: () => null,
+  }),
+  nextAgentHint: Annotation<string | null>({
+    reducer: (_prev, next) => next,
+    default: () => null,
+  }),
 });
 
 export type LeadStateType = typeof LeadState.State;
