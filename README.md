@@ -40,7 +40,7 @@ that wasn't ready the first time gets lost.*
 - [x] **Step 2 — Supervisor routing logic** (`agents/supervisor.ts`, tested in isolation — `npm test`)
 - [x] **Step 3 — Sub-agents** (`agents/qualifier.ts`, `objectionHandler.ts`, `scheduler.ts`, each tested alone — 14/14 tests passing)
 - [x] **Step 4 — Wired into a real LangGraph graph** (`agents/graph.ts` — Supervisor -> conditional edge -> sub-agent -> END)
-- [ ] Step 5 — Trace visualization
+- [x] **Step 5 — Trace visualization** (`frontend/trace-timeline.html` — colored spine shows agent handoffs, includes the escalation case)
 - [ ] Step 6 — Demo chat widget frontend
 - [ ] Step 7 — Log outcomes to Supabase
 - [ ] Step 8 — Docs, README polish, walkthrough video

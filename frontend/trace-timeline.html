@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agent Trace — Lead #4821</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12151A;
+    --surface: #1A1E25;
+    --surface-raised: #20242C;
+    --border: #2A2F3A;
+    --text: #ECEEF1;
+    --text-dim: #868D9A;
+    --text-faint: #565D6B;
+
+    --supervisor: #F5A623;
+    --qualifier: #34D399;
+    --objection: #A78BFA;
+    --scheduler: #60A5FA;
+    --escalate: #F87171;
+    --lead: #6B7280;
+
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    padding: 32px 16px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .titles h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .titles p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+  }
+  .status-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--escalate);
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    padding: 6px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  /* ---------- Legend ---------- */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 20px 0 28px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .raw-toggle {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-left: auto;
+  }
+  .raw-toggle:hover { color: var(--text); border-color: var(--text-faint); }
+  .raw-toggle:focus-visible { outline: 2px solid var(--supervisor); outline-offset: 2px; }
+
+  #raw-panel {
+    display: none;
+    background: #0D0F13;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 28px;
+    overflow-x: auto;
+  }
+  #raw-panel.open { display: block; }
+  #raw-panel pre {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.6;
+    color: #9BE3B5;
+    white-space: pre;
+  }
+
+  /* ---------- Timeline ---------- */
+  .timeline { position: relative; }
+
+  .day-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 32px 0 18px;
+    padding-left: 3px;
+  }
+  .day-divider:first-child { margin-top: 0; }
+  .day-divider .line { flex: 1; height: 1px; background: var(--border); }
+  .day-divider .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 14px;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: rise 0.4s ease forwards;
+  }
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) {
+    .row { animation: none; opacity: 1; transform: none; }
+  }
+
+  .spine {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+  .spine::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: -18px;
+    width: 2px;
+    background: var(--seg-color, var(--border));
+    opacity: 0.5;
+  }
+  .row:last-child .spine::before { display: none; }
+  .node {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--seg-color, var(--text-faint));
+    margin-top: 4px;
+    z-index: 1;
+    box-shadow: 0 0 0 3px var(--bg);
+  }
+
+  /* routing log lines */
+  .routing-line {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 4px 0 18px;
+    line-height: 1.5;
+  }
+  .routing-line .arrow { color: var(--seg-color); font-weight: 600; }
+  .routing-line .reason { color: var(--text-faint); }
+
+  /* message cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--seg-color, var(--border));
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+  }
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .agent-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--seg-color, var(--text-dim));
+  }
+  .timestamp {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-faint);
+  }
+  .card p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .card.lead { border-left-color: var(--lead); }
+  .card.lead .agent-tag { color: var(--text-dim); }
+
+  /* escalation card */
+  .card.escalated {
+    border-left-color: var(--escalate);
+    background: rgba(248, 113, 113, 0.06);
+  }
+  .card.escalated .agent-tag { color: var(--escalate); }
+  .review-chip {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--escalate);
+    background: rgba(248, 113, 113, 0.12);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    padding: 3px 7px;
+    border-radius: 5px;
+    margin-top: 8px;
+  }
+
+  footer {
+    margin-top: 36px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 20px 12px 60px; }
+    .titles h1 { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="titles">
+      <h1>Agent Trace — Lead #4821</h1>
+      <p>Sunshine Solar · re-engagement thread</p>
+    </div>
+    <div class="status-pill">ESCALATED — AWAITING HUMAN REVIEW</div>
+  </header>
+
+  <div class="legend" id="legend"></div>
+
+  <button class="raw-toggle" id="rawToggle" aria-expanded="false" aria-controls="raw-panel">
+    View raw trace JSON
+  </button>
+
+  <div id="raw-panel"><pre id="rawJson"></pre></div>
+
+  <div class="timeline" id="timeline"></div>
+
+  <footer>lead_state.routingTrace + conversationHistory, rendered directly — this is the actual state shape, not mock UI copy.</footer>
+</div>
+
+<script>
+const AGENTS = {
+  supervisor:      { label: 'SUPERVISOR',        color: 'var(--supervisor)' },
+  qualifier:       { label: 'QUALIFIER',         color: 'var(--qualifier)' },
+  objectionHandler:{ label: 'OBJECTION HANDLER', color: 'var(--objection)' },
+  scheduler:       { label: 'SCHEDULER',         color: 'var(--scheduler)' },
+  escalate:        { label: 'ESCALATED',         color: 'var(--escalate)' },
+  lead:            { label: 'LEAD',              color: 'var(--lead)' },
+};
+
+// Mirrors the real lead_state shape: routingTrace + conversationHistory,
+// merged into one chronological feed and tagged with a day index for
+// the "persistence across sessions" requirement.
+const events = [
+  { day: 1, dayLabel: 'Day 1 · Aug 18', gap: null, kind: 'routing', from: 'supervisor', to: 'qualifier',
+    reason: '3 days since last contact and qualification is incomplete — re-engaging to gather missing info.' },
+  { day: 1, kind: 'message', agent: 'qualifier', role: 'agent', time: '9:02 AM',
+    text: "Hey! Just checking back in — still exploring solar for the house? Quick one: do you own the home, and which way does the roof face?" },
+  { day: 1, kind: 'message', agent: 'lead', role: 'lead', time: '11:40 AM',
+    text: "yeah still interested, we own it, roof faces south" },
+  { day: 1, kind: 'routing', from: 'supervisor', to: 'qualifier',
+    reason: 'Reply provides qualification info — continuing the qualification flow.' },
+  { day: 1, kind: 'message', agent: 'qualifier', role: 'agent', time: '11:41 AM',
+    text: "Perfect, that's everything I needed — you're fully qualified. I'll get this in front of someone to find a time that works." },
+
+  { day: 2, dayLabel: 'Day 3 · Aug 21', gap: '3 days later', kind: 'message', agent: 'lead', role: 'lead', time: '2:15 PM',
+    text: "actually before we go further — isn't this way more expensive than just staying on the grid?" },
+  { day: 2, kind: 'routing', from: 'supervisor', to: 'objectionHandler',
+    reason: 'Reply raises a new objection.' },
+  { day: 2, kind: 'message', agent: 'objectionHandler', role: 'agent', time: '2:16 PM',
+    text: "Totally fair to ask — most homeowners break even in 6–8 years with the 30% federal credit, then it's pure savings after. Want me to run the numbers on your actual bill?" },
+
+  { day: 3, dayLabel: 'Day 5 · Aug 23', gap: '2 days later', kind: 'message', agent: 'lead', role: 'lead', time: '4:50 PM',
+    text: "🤷 idk man ask my cousin lol" },
+  { day: 3, kind: 'escalation', from: 'supervisor', to: 'escalate',
+    reason: "Reply doesn't match any expected pattern — escalating for human review instead of guessing." },
+];
+
+const legend = document.getElementById('legend');
+['supervisor','qualifier','objectionHandler','scheduler','escalate'].forEach(key => {
+  const a = AGENTS[key];
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<span class="dot" style="background:${a.color}"></span>${a.label}`;
+  legend.appendChild(item);
+});
+
+const timeline = document.getElementById('timeline');
+let lastDay = null;
+let delay = 0;
+
+events.forEach(ev => {
+  if (ev.day !== lastDay) {
+    lastDay = ev.day;
+    const divider = document.createElement('div');
+    divider.className = 'day-divider';
+    divider.innerHTML = `<span class="line"></span><span class="label">${ev.dayLabel}${ev.gap ? ' · ' + ev.gap : ''}</span><span class="line"></span>`;
+    timeline.appendChild(divider);
+  }
+
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.style.animationDelay = `${delay}s`;
+  delay += 0.05;
+
+  const spine = document.createElement('div');
+  spine.className = 'spine';
+
+  if (ev.kind === 'routing' || ev.kind === 'escalation') {
+    const color = AGENTS[ev.to].color;
+    spine.style.setProperty('--seg-color', color);
+    spine.innerHTML = '<div class="node" style="--seg-color:' + color + '"></div>';
+    row.appendChild(spine);
+
+    const content = document.createElement('div');
+    if (ev.kind === 'escalation') {
+      content.className = 'card escalated';
+      content.innerHTML = `
+        <div class="card-head">
+          <span class="agent-tag">⚠ ESCALATED TO HUMAN REVIEW</span>
+        </div>
+        <p>${ev.reason}</p>
+        <span class="review-chip">needsHumanReview: true</span>`;
+    } else {
+      content.className = 'routing-line';
+      content.innerHTML = `<span class="arrow" style="--seg-color:${color}">⚙ SUPERVISOR → ${AGENTS[ev.to].label}</span> · <span class="reason">"${ev.reason}"</span>`;
+    }
+    row.appendChild(content);
+  } else {
+    const agentKey = ev.role === 'lead' ? 'lead' : ev.agent;
+    const color = AGENTS[agentKey].color;
+    spine.innerHTML = '<div class="node" style="--seg-color:' + color + '"></div>';
+    spine.style.setProperty('--seg-color', color);
+    row.appendChild(spine);
+
+    const card = document.createElement('div');
+    card.className = 'card' + (ev.role === 'lead' ? ' lead' : '');
+    card.style.setProperty('--seg-color', color);
+    card.innerHTML = `
+      <div class="card-head">
+        <span class="agent-tag">${AGENTS[agentKey].label}</span>
+        <span class="timestamp">${ev.time}</span>
+      </div>
+      <p>${ev.text}</p>`;
+    row.appendChild(card);
+  }
+
+  timeline.appendChild(row);
+});
+
+document.getElementById('rawJson').textContent = JSON.stringify(events, null, 2);
+
+const toggle = document.getElementById('rawToggle');
+const panel = document.getElementById('raw-panel');
+toggle.addEventListener('click', () => {
+  const open = panel.classList.toggle('open');
+  toggle.setAttribute('aria-expanded', String(open));
+  toggle.textContent = open ? 'Hide raw trace JSON' : 'View raw trace JSON';
+});
+</script>
+</body>
+</html>
