@@ -1,9 +1,14 @@
 -- Extends the Supabase project from Project 1 — same project, new table.
 -- Run in the Supabase SQL editor, or via `supabase migration new lead_state`.
 --
+-- lead_id is plain text, not a foreign key to calls(id). Real production
+-- threads can still store the real numeric call ID here (as text), but the
+-- public demo widget generates its own ids for pretend visitors — those
+-- can't satisfy a FK to a real call row, so this is enforced at the app
+-- level instead of the database level.
 create table if not exists lead_state (
   id uuid primary key default gen_random_uuid(),
-  lead_id uuid not null references calls(id),
+  lead_id text not null,
   qualification_status text not null default 'unqualified'
     check (qualification_status in ('unqualified','partially_qualified','qualified','dead')),
   conversation_history jsonb not null default '[]'::jsonb,
