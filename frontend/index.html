@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Continue the Conversation — Sunshine Solar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12151A;
+    --surface: #1A1E25;
+    --surface-raised: #20242C;
+    --border: #2A2F3A;
+    --text: #ECEEF1;
+    --text-dim: #868D9A;
+    --text-faint: #565D6B;
+
+    --supervisor: #F5A623;
+    --qualifier: #34D399;
+    --objection: #A78BFA;
+    --scheduler: #60A5FA;
+    --escalate: #F87171;
+    --lead: #6B7280;
+
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    min-height: 100vh;
+  }
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- Scenario banner ---------- */
+  .scenario {
+    grid-column: 1 / -1;
+    background: var(--surface-raised);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .scenario-text p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    max-width: 640px;
+  }
+  .scenario-text strong { color: var(--text); }
+  .status-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 6px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+  }
+  .status-pill.escalated {
+    color: var(--escalate);
+    background: rgba(248, 113, 113, 0.1);
+    border-color: rgba(248, 113, 113, 0.35);
+  }
+  .status-pill.booked {
+    color: var(--qualifier);
+    background: rgba(52, 211, 153, 0.1);
+    border-color: rgba(52, 211, 153, 0.35);
+  }
+
+  /* ---------- Chat panel ---------- */
+  .chat-panel {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    max-height: calc(100vh - 61px);
+  }
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .bubble {
+    max-width: 78%;
+    padding: 10px 13px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .bubble.lead {
+    align-self: flex-end;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .bubble.agent {
+    align-self: flex-start;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--seg-color, var(--supervisor));
+  }
+  .bubble .tag {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--seg-color, var(--text-dim));
+    margin-bottom: 4px;
+  }
+  .thinking {
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-faint);
+    padding: 4px 2px;
+  }
+  .thinking .dots::after {
+    content: '';
+    animation: dots 1.2s steps(4, end) infinite;
+  }
+  @keyframes dots {
+    0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; }
+  }
+
+  .composer {
+    border-top: 1px solid var(--border);
+    padding: 14px 16px;
+    display: flex;
+    gap: 8px;
+  }
+  .composer input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+  .composer input:focus { outline: 2px solid var(--supervisor); outline-offset: 1px; }
+  .composer button {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: #12151A;
+    background: var(--supervisor);
+    border: none;
+    padding: 0 18px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .composer button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .composer button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+  /* ---------- Trace panel ---------- */
+  .trace-panel {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - 61px);
+  }
+  .trace-panel h2 {
+    font-size: 12px;
+    font-family: var(--mono);
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    margin: 0 0 4px;
+  }
+  .trace-panel .sub {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin: 0 0 18px;
+    font-family: var(--mono);
+  }
+  .empty-trace {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-faint);
+    padding: 12px 0;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 18px 1fr;
+    gap: 12px;
+    animation: rise 0.35s ease forwards;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .row { animation: none; } }
+
+  .spine { position: relative; display: flex; justify-content: center; }
+  .spine::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: -14px;
+    width: 2px;
+    background: var(--seg-color, var(--border));
+    opacity: 0.5;
+  }
+  .row:last-child .spine::before { display: none; }
+  .node {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--seg-color, var(--text-faint));
+    margin-top: 3px;
+    box-shadow: 0 0 0 3px var(--bg);
+  }
+  .routing-line {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 3px 0 16px;
+    line-height: 1.5;
+  }
+  .routing-line .arrow { color: var(--seg-color); font-weight: 600; }
+  .routing-line .reason { color: var(--text-faint); }
+
+  .error-line {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--escalate);
+    padding: 8px 10px;
+    background: rgba(248, 113, 113, 0.08);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: 6px;
+    margin: 8px 0;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="scenario">
+    <div class="scenario-text">
+      <p><strong>You're the lead.</strong> A few days ago you told our voice agent "call me back next week." Pick up the conversation right here — type as if you're texting back.</p>
+    </div>
+    <div class="status-pill" id="statusPill">IN PROGRESS</div>
+  </div>
+
+  <div class="chat-panel">
+    <div class="messages" id="messages"></div>
+    <div class="composer">
+      <input id="input" type="text" placeholder="Type as the lead…" autocomplete="off" />
+      <button id="sendBtn">SEND</button>
+    </div>
+  </div>
+
+  <div class="trace-panel">
+    <h2>Agent Trace</h2>
+    <p class="sub">Live — updates as the Supervisor routes each reply</p>
+    <div id="trace"></div>
+  </div>
+</div>
+
+<script>
+const AGENT_META = {
+  supervisor:      { label: 'SUPERVISOR',        color: 'var(--supervisor)' },
+  qualifier:       { label: 'QUALIFIER',         color: 'var(--qualifier)' },
+  objectionHandler:{ label: 'OBJECTION HANDLER', color: 'var(--objection)' },
+  scheduler:       { label: 'SCHEDULER',         color: 'var(--scheduler)' },
+  escalate:        { label: 'ESCALATED',         color: 'var(--escalate)' },
+};
+
+// Fresh per page load — no localStorage, this is a single demo session.
+const leadId = 'demo-' + crypto.randomUUID();
+
+const messagesEl = document.getElementById('messages');
+const traceEl = document.getElementById('trace');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('sendBtn');
+const statusPill = document.getElementById('statusPill');
+
+let traceHasEntries = false;
+
+function addBubble(role, text, agentKey) {
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ' + role;
+  if (agentKey && AGENT_META[agentKey]) {
+    bubble.style.setProperty('--seg-color', AGENT_META[agentKey].color);
+    bubble.innerHTML = `<span class="tag">${AGENT_META[agentKey].label}</span>${text}`;
+  } else {
+    bubble.textContent = text;
+  }
+  messagesEl.appendChild(bubble);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function addTraceRouting(toAgentKey, reason) {
+  if (!traceHasEntries) {
+    traceEl.innerHTML = '';
+    traceHasEntries = true;
+  }
+  const meta = AGENT_META[toAgentKey] || { label: toAgentKey, color: 'var(--text-faint)' };
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `
+    <div class="spine" style="--seg-color:${meta.color}"><div class="node" style="--seg-color:${meta.color}"></div></div>
+    <div class="routing-line"><span class="arrow" style="--seg-color:${meta.color}">⚙ SUPERVISOR → ${meta.label}</span> · <span class="reason">"${reason}"</span></div>`;
+  traceEl.appendChild(row);
+  traceEl.scrollTop = traceEl.scrollHeight;
+}
+
+function addTraceError(text) {
+  const el = document.createElement('div');
+  el.className = 'error-line';
+  el.textContent = text;
+  traceEl.appendChild(el);
+}
+
+function setThinking(on) {
+  let el = document.getElementById('thinkingRow');
+  if (on) {
+    if (el) return;
+    el = document.createElement('div');
+    el.id = 'thinkingRow';
+    el.className = 'thinking';
+    el.innerHTML = '⚙ Supervisor is routing<span class="dots"></span>';
+    messagesEl.appendChild(el);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  } else if (el) {
+    el.remove();
+  }
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+
+  addBubble('lead', text, null);
+  input.value = '';
+  sendBtn.disabled = true;
+  setThinking(true);
+
+  try {
+    const res = await fetch('/api/agent-turn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId, message: text }),
+    });
+
+    setThinking(false);
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      addTraceError('⚠ ' + (body.error || `Request failed (${res.status})`));
+      return;
+    }
+
+    const data = await res.json();
+
+    if (data.handledBy) {
+      addTraceRouting(data.handledBy, data.reason || '');
+    }
+    if (data.reply) {
+      addBubble('agent', data.reply, data.handledBy);
+    }
+    if (data.needsHumanReview) {
+      statusPill.textContent = 'ESCALATED — AWAITING HUMAN REVIEW';
+      statusPill.className = 'status-pill escalated';
+    } else if (data.resolution === 'booked') {
+      statusPill.textContent = 'BOOKED';
+      statusPill.className = 'status-pill booked';
+    }
+  } catch (err) {
+    setThinking(false);
+    addTraceError('⚠ Could not reach /api/agent-turn — this widget needs to be deployed with the backend live (and OPENAI_API_KEY / SUPABASE keys set) to actually respond. The chat UI itself is working correctly.');
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+input.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+// Scripted opening line — sets the scene, not a real graph invocation.
+addBubble('agent', "Hey — following up on our call. Still exploring solar for the house?", 'qualifier');
+input.focus();
+</script>
+</body>
+</html>
