@@ -45,7 +45,7 @@ export async function route(
   classify: ReplyClassifier
 ): Promise<RoutingDecision> {
   // Fast path: already resolved — nothing left to route.
-  if (state.resolution === "booked" || state.resolution === "dead") {
+  if (state.resolution === "booked" || state.resolution === "dead" || state.resolution === "escalated") {
     return {
       nextAgent: "end",
       reason: `Lead already resolved as "${state.resolution}" — no further routing.`,
@@ -99,8 +99,12 @@ export function toStateUpdate(
     toAgent: decision.nextAgent,
     reason: decision.reason,
   };
-  return {
+  const update: Partial<LeadStateType> = {
     routingTrace: [trace],
     needsHumanReview: decision.nextAgent === "escalate",
   };
+  if (decision.nextAgent === "escalate") {
+    update.resolution = "escalated";
+  }
+  return update;
 }

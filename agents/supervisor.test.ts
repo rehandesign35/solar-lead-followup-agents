@@ -68,15 +68,22 @@ test("reply classified as provides_missing_info routes to qualifier", async () =
 // unparseable reply must not be dropped or silently mis-routed — it has
 // to escalate, and needsHumanReview must flip true on the resulting state
 // update so a human actually sees it.
-test("unparseable reply escalates and flags needsHumanReview", async () => {
+test("unparseable reply escalates, flags needsHumanReview, and sets resolution=escalated", async () => {
   const state = baseState();
   const decision = await route(state, { type: "lead_reply", message: "🤷 idk man ask my cousin lol" }, fakeClassifier("unparseable"));
   assert.equal(decision.nextAgent, "escalate");
 
   const update = toStateUpdate(decision);
   assert.equal(update.needsHumanReview, true);
+  assert.equal(update.resolution, "escalated");
   assert.equal(update.routingTrace?.length, 1);
   assert.equal(update.routingTrace?.[0].toAgent, "escalate");
+});
+
+test("already-escalated leads route to end — no further auto-routing until a human clears it", async () => {
+  const state = baseState({ resolution: "escalated" });
+  const decision = await route(state, { type: "lead_reply", message: "anything at all" }, fakeClassifier("ready_to_book"));
+  assert.equal(decision.nextAgent, "end");
 });
 
 test("toStateUpdate does not flag review for normal routes", async () => {
