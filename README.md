@@ -55,13 +55,14 @@ Generated with `npm run metrics`, which queries every row in `lead_state` direct
 
 | Metric | Value |
 |---|---|
-| Total leads | 1 (early testing) |
-| Resolution rate | tracked automatically — booked/dead/escalated vs. still in progress |
-| Escalated to human | tracked automatically |
-| Avg handoffs per lead | 4.00 |
-| Avg turns to resolution | n/a yet — needs more resolved leads |
+| Total leads | 12 |
+| Resolution rate | 41.7% (5/12) |
+| Booked rate | 8.3% (1/12) |
+| Escalated to human | 5/12 |
+| Avg handoffs per lead | 1.83 |
+| Avg turns to resolution | 1.8 |
 
-**Known limitation, found via live testing (not hidden):** a reply that directly answered the Qualifier's timeline question ("In 1 month") was misclassified as `unparseable` and escalated, instead of routing back to the Qualifier. Short-but-valid answers are currently under-recognized by the classifier prompt in `agents/classifyReply.ts` — worth tightening with a few-shot example. Full writeup in `docs/eval-results.md`.
+**Classifier fix, verified via live testing:** short-but-valid replies such as "In 1 month" now have few-shot examples in `agents/classifyReply.ts` and route back to the Qualifier. Genuinely ambiguous replies still escalate for human review. The original failure and recovery case remains documented in `docs/eval-results.md`.
 
 ## Tech stack & key decisions
 

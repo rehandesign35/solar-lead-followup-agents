@@ -17,6 +17,12 @@ Categories:
 - ready_to_book: signals readiness to schedule / move forward
 - unparseable: doesn't clearly fit any of the above (off-topic, ambiguous, garbled)
 
+Examples:
+- "In 1 month" -> provides_missing_info
+- "Yes" (confirming a qualification question or readiness to move forward) -> ready_to_book
+- "Not yet" (answering a qualification question) -> provides_missing_info
+- "Maybe" (without any additional context) -> unparseable
+
 Lead's qualification status so far: ${state.qualificationStatus}
 Lead's message: "${message}"
 
